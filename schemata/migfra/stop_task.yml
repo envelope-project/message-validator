@@ -1,0 +1,26 @@
+# test
+type: map
+mapping:
+        "task":
+                type: str
+                pattern: /stop vm/
+                required: yes
+        "id":
+                type: str
+                required: no
+        "list":
+                type: seq
+                sequence:
+                        - type: map
+                          name: stop-vm-config
+                          mapping:
+                                  "regex":
+                                          type: str
+                                  "vm-name":
+                                          type: str
+                                  "force":
+                                          type: bool
+                                          required: no
+                                  "undefine":
+                                          type: bool
+                                          required: no

@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+
+require 'envelope/message-validator'
+
+Envelope::MessageValidator::CLI.start(ARGV)

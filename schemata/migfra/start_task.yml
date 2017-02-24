@@ -1,0 +1,46 @@
+# test
+type: map
+mapping:
+  "id":
+    type: str
+    required: no
+  "task":
+    type: str
+    pattern: /start vm/
+    required: yes
+  "vm-configurations":
+    type: seq
+    sequence:
+      - type: map
+        name: start-vm-config
+        mapping:
+          "vm-name":
+            type: str
+          "xml":
+            type: str
+          "ivshmem":
+            type: map
+            mapping:
+              "id":
+                type: str
+                required: yes
+              "size":
+                type: int
+                required: yes
+          "pci-ids":
+            type: seq
+            sequence:
+              - type: map
+                mapping:
+                  "vendor":
+                    type: str
+                    required: yes
+                    pattern: /0x[0-9A-Fa-f]+/
+                  "device":
+                    type: str
+                    required: yes
+                    pattern: /0x[0-9A-Fa-f]+/
+          "transient":
+            type: bool
+            required: false
+
