@@ -1,5 +1,6 @@
 require 'colorize'
 require 'kwalify'
+require 'yaml'
 require 'envelope/message-validator/hooks'
 
 class String
@@ -27,23 +28,60 @@ module Envelope
         @schemata.each { |schema| puts schema.yaml_path_to_name }
       end
 
-      def validate(yaml)
-        document = Kwalify::Yaml.load_file(yaml)
-        @schemata.each do |schema|
-          print "Validate '#{yaml}' against '#{schema.yaml_path_to_name}'... "
+      def validate_from_file(yaml_file)
+        yaml_str = File.read(yaml_file)
+        results = validate(yaml_str, '')
+
+        if (results['validations'].length == 1)
+          results['validations'].each do |schema_name, results|
+            unless results["result"]
+              puts "The following errors were found for '#{schema_name}':"
+             results["errors"].each { |error| puts error }
+            else
+              puts "Validation against #{schema_name}...#{'SUCCESS'.green}"
+            end
+          end
+        else
+          results['validations']
+.each do |schema_name, results|
+            print "Validation against #{schema_name}..."
+            if results["result"]
+              puts "SUCCESS".green
+            else
+              puts "FAIL".red
+            end
+          end
+        end
+      end
+
+      def validate(yaml_str, schema)
+        yaml = Kwalify::Yaml.load(yaml_str)
+        results = {}
+        schema = ".*" if (schema.empty? || schema == "anyschema")
+        schemata = @schemata.select { |e| e =~ /#{schema}/ }
+        if schemata.empty?
+          results["result"] = "failure"
+          results["error"] = "Could not find schema '#{schema}'"
+          return results
+        else
+          results["result"] = "success"
+          results["validations"] = {}
+        end
+        schemata.each do |schema|
+          schema_name = schema.yaml_path_to_name
           validator = Envelope::MessageValidator::Hooks.new(Kwalify::Yaml.load_file(schema))
-          @errors = validator.validate(document)
-          if (@errors && !@errors.empty?)
-            puts "FAIL".red
+          errors = validator.validate(yaml)
+          if (errors && !errors.empty?)
+            results["validations"][schema_name] = {"result" => false, "errors" => []}
+            errors.each do |error|
+              results["validations"][schema_name]["errors"] << error.message
+            end
           else
-            puts "SUCCESS".green
+            results["validations"][schema_name] = {"result" => true}
           end
         end
 
-        if (@schemata.length == 1)
-          puts "The following errors were found for '#{@schemata[0].yaml_path_to_name}':" if (@errors && !@errors.empty?)
-          @errors.each { |error| puts error }
-        end
+        results
       end
     end
   end
