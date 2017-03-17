@@ -21,14 +21,46 @@ Or install it yourself as:
 
 ```
 Commands:
+  message-validator agent           # run as agent to provide validations via MQTT
   message-validator help [COMMAND]  # Describe available commands or one specific command
   message-validator list            # list available schemata
   message-validator validate YAML   # validates if YAML is valid
 
 Options:
   -p, [--schemata-path=SCHEMATA-PATH]  # path to schemata files
+                                       # Default: /Users/Simon/work/envelope-validator/schemata
 ```
 
+### Agent mode
+
+#### Requests
+Validation requests have to be posted to the topic:
+        
+        envelope/validator/validate/<schema>/<id>
+
+whereas `<schema>` is a schema in accordance to the list obtained via `message-validator list`. Passing `.*`, `anyschema`, or leaving the field empty requests a validation against all available schemata. `<id>` is an arbitrary string that can be used for an identification of the result message. The payload of the message should contain a string in [YAML](http://www.yaml.org) format. 
+
+#### Results
+The agent publishes results on the topics:
+
+        envelope/validator/result/<id>
+        
+`<id>` corresponds to the ID defined within the request topic. If the `<id>` field is empty, it is omitted in the result topic as well. Result messages contain the following information:
+```
+result: <success/failure>
+validations:
+- schema: <schema name>
+  result: <true/false>
+- schema: <schema name>
+  result: <true/false>
+  errors:
+  - <error string>
+  - <error string>
+  - ...
+- ...
+```
+    
+    
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
