@@ -33,7 +33,8 @@ module Envelope
         results = validate(yaml_str, '')
 
         if (results['validations'].length == 1)
-          results['validations'].each do |schema_name, results|
+          results['validations'].each do |results|
+            schema_name = results["schema"]
             unless results["result"]
               puts "The following errors were found for '#{schema_name}':"
              results["errors"].each { |error| puts error }
@@ -65,19 +66,19 @@ module Envelope
           return results
         else
           results["result"] = "success"
-          results["validations"] = {}
+          results["validations"] = []
         end
         schemata.each do |schema|
           schema_name = schema.yaml_path_to_name
           validator = Envelope::MessageValidator::Hooks.new(Kwalify::Yaml.load_file(schema))
           errors = validator.validate(yaml)
           if (errors && !errors.empty?)
-            results["validations"][schema_name] = {"result" => false, "errors" => []}
+            results["validations"] << {"schema" => schema.yaml_path_to_name, "result" => false, "errors" => []}
             errors.each do |error|
-              results["validations"][schema_name]["errors"] << error.message
+              results["validations"].last["errors"] << error.message
             end
           else
-            results["validations"][schema_name] = {"result" => true}
+            results["validations"] << {"schema" => schema.yaml_path_to_name, "result" => true}
           end
         end
 

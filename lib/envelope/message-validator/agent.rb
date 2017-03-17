@@ -3,7 +3,9 @@ require 'socket'
 require 'envelope/message-validator/message-validator'
 require 'envelope/message-validator/Communicator'
 
-AGENT_TOPIC="envelope/" + `hostname`.strip + "/validator"
+AGENT_TOPIC="envelope/validator"
+REQUEST_TOPIC="#{AGENT_TOPIC}/validate"
+RESULT_TOPIC="#{AGENT_TOPIC}/result"
 
 module Envelope
   module MessageValidator
@@ -16,12 +18,12 @@ module Envelope
 
       def run
           @communicator.client.get do |topic, message|
-            topic.slice! "#{AGENT_TOPIC}/validate"
+            topic.slice! REQUEST_TOPIC
             topic_parts = topic.split("/").drop(1)
             schema = topic_parts[0]
             id = topic_parts.drop(1).join("/")
             results = @validator.validate(message, schema) unless (message.class == NilClass)
-            @communicator.client.publish("#{AGENT_TOPIC}/result/#{id}", results.to_yaml)
+            @communicator.client.publish("#{RESULT_TOPIC}/#{id}", results.to_yaml)
           end
         puts "Goodbye."
       end
